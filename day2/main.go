@@ -5,7 +5,6 @@ import (
 	"common"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 )
 
@@ -35,77 +34,55 @@ func parse(dataFile string, maxScans int) {
 	total := 0
 	i := 0
 
-	lows := make([]int, 0)
-	highs := make([]int, 0)
 	for scanner.Scan() {
 		if maxScans != -1 && i == maxScans {
 			break
 		}
 		line := scanner.Text()
-		slice, err:= common.ParseSlice(line)
+		slice, err := common.ParseSlice(line)
 		if err != nil {
-			fmt.Printf("gay -> %s\n", line)
+			fmt.Printf("you're cooked: %s\n", line)
 		}
-		lows = append(lows, slice[0])
-		highs = append(highs, slice[1])
 
-
+		if isSafe(slice) {
+			fmt.Printf("safe: %s\n", line)
+			total++
+		} else {
+			fmt.Printf("unsafe: %s\n", line)
+		}
 
 		i++
 	}
 
-	sort.Ints(lows)
-	sort.Ints(highs)
-
-	//total = computeSimilarityOne(lows, highs)
-	total = computeSimilarityTwo(lows, highs)
 	fmt.Printf("total = %d\n", total)
 
 	defer file.Close()
 }
 
-func computeSimilarityOne(left, right []int) int {
-	total := 0
-	for i := range left {
-		dist := left[i] - right[i]
-		if dist > 0 {
-			total += dist
-		} else {
-			total -= dist
-		}
-	}
-	return total
-}
+func isSafe(sequence []int) bool {
 
-func computeSimilarityTwo(left, right []int) int {
-	last := len(right) - 1
-	pointer := 0
-	total := 0
-	cache := make(map[int]int, 0)
-
-	for _, value := range left {
-		_, exists := cache[value]
-		if !exists {
-			for (right[pointer] != value && pointer != last) {
-				pointer = common.Min(pointer + 1, last)
-			}
-
-			for right[pointer] == value {
-				cache[value] += value
-				pointer = common.Min(pointer + 1, last)
-				if pointer == last {
-					break
-				}
-			}
-			
-			if pointer == last {
-				pointer = 0
-			}
+	hasDirection := false
+	isIncreasing := sequence[1] > sequence[0]
+	for i := 0; i < len(sequence) - 1; i++ {
+		this := sequence[i]	
+		next := sequence[i + 1]
+		step := next - this
+		
+		if this == next {
+			return false
 		}
 
-		similarity := cache[value]
-		total += similarity
-	}
+		if isIncreasing && (step < 1  || step > 3) {
+			return false	
+		}
 
-	return total
+		if !isIncreasing && (step > -1  || step < -3) {
+			return false	
+		}
+
+		fmt.Printf("hasDirection: %t, isIncreasing: %t, step: %d\n", hasDirection, isIncreasing, step)
+
+	}
+	return true
 }
+
